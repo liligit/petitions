@@ -4662,3 +4662,17 @@ body.page-register form#user-register-form p#signup-agreement {
 }
 
 /*# sourceMappingURL=style.css.map */
+
+/* Signature Form Block */
+
+.block-petitionssignatureform-form .form-item-first-name label, 
+.block-petitionssignatureform-form .form-item-last-name label, 
+.block-petitionssignatureform-form .form-item-email label {
+  display: block;
+  position: relative !important;
+  height: 25px;
+  width: auto;
+  visibility: visible;
+  overflow: unset;
+}
+
