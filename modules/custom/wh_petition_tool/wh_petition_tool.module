@@ -126,40 +126,11 @@ function wh_petition_tool_left_nav() {
  *    The wh.gov short URL or NULL on failure.
  */
 function wh_petition_tool_shortenurl($url) {
-  $server = variable_get('wh_petition_tool_hub_url', '');
-  $data = array('url' => $url);
-  $response = drupal_http_request($server, array(
-       'method' => 'POST',
-       'data' => json_encode($data),
-       'max_redirects' => 0,
-       'headers' => array('Content-Type' => 'application/json', 'Accept' => 'application/json'))
-  );
-  if ($response->code == 200) {
-    $shortened_url = json_decode($response->data);
-    $parsed_url = parse_url($shortened_url[0]);
-    if (!empty($parsed_url['path']) && strlen($parsed_url['path']) > 1) {
-      return $shortened_url[0];
-    }
-    else {
-      watchdog('wh_petition_tool', 'Request to shorten !url did not return a path.', array(
-        '!url' => $url,
-      ), WATCHDOG_ERROR);
-      // Return the absolute url from the path passed in if the url shortener tool returns no path.
-      return NULL;
-    }
-  }
-  else {
-    // Log an error.
-    watchdog('wh_petition_tool', 'Request to !url failed. Code: !code. Error: !error', array(
-      '!url' => $url,
-      '!code' => $response->code,
-      '!error' => $response->error,
-    ), WATCHDOG_ERROR);
-    // Return the absolute url from the path passed in if the url shortener tool returns an error.
-    return NULL;
-  }
+  global $base_url;
+  $url = $base_url . $url;
+  $short = shorten_url($original = $url, $service = '');
+  return $short;
 }
-
 /**
  * Implements hook_form_FORM_ID_alter().
  *
