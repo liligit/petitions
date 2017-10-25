@@ -73,8 +73,11 @@ function _signatures_queue_process_signatures($job_id, $server_name, $worker_nam
       }
       signatures_queue_debug_logger('Claimed item from queue. ID: @id.', array('@id' => $queue_item_id));
 
+      $item_d = $item->data;
+      $item_d = (object) $item_d;
+
       // Make sure timestamps are valid and petition IDs match.
-      if (!_signatures_queue_process_signatures_assert_legitimate($item, $debug) || !_signatures_queue_process_signatures_valid_petition($item->petition_id, $debug)) {
+      if (!_signatures_queue_process_signatures_assert_legitimate($item, $debug) || !_signatures_queue_process_signatures_valid_petition($item_d->petition_id, $debug)) {
         // Skip processing illegitimate item.
         $item->signature_id = 'invalid';
         _signatures_queue_process_signatures_log_times($item);
@@ -101,7 +104,7 @@ function _signatures_queue_process_signatures($job_id, $server_name, $worker_nam
       signatures_queue_debug_logger('Ending user creation, beginning getting signature ID. ID: @id.', array('@id' => $queue_item_id));
 
       // Get signature_id, if this user has already signed.
-      $item->signature_id = _signatures_queue_process_signatures_get_signature_id($item->petition_id, $user->uid);
+      $item->signature_id = _signatures_queue_process_signatures_get_signature_id($item_d->petition_id, $user->uid);
 
       // Determine if this is a new signature.
       $new_signature = (!$item->signature_id) ? TRUE : FALSE;
@@ -118,10 +121,10 @@ function _signatures_queue_process_signatures($job_id, $server_name, $worker_nam
           // Log failure.
           logger_event('exceptions.signatures_queue.f79c9a5');
           watchdog('signatures_queue', 'New signature could not be created. secret_validation_key: @secret_validation_key, vid: @vid, petition_id: @petition_id, timestamp_received_signature_validation: @timestamp_received_signature_validation. @suffix', array(
-            '@secret_validation_key' => $item->secret_validation_key,
-            '@vid' => $item->vid,
-            '@petition_id' => $item->petition_id,
-            '@timestamp_received_signature_validation' => $item->timestamp_received_signature_validation,
+            '@secret_validation_key' => $item_d->secret_validation_key,
+            '@vid' => $item_d->vid,
+            '@petition_id' => $item_d->petition_id,
+            '@timestamp_received_signature_validation' => $item_d->timestamp_received_signature_validation,
             '@suffix' => $watchdog_suffix,
           ), WATCHDOG_CRITICAL);
           // Do NOT move items to processed table or remove from preprocess table.
@@ -144,8 +147,8 @@ function _signatures_queue_process_signatures($job_id, $server_name, $worker_nam
         $watchdog_suffix = _signatures_queue_watchdog_suffix('process_signatures', $job_id, $server_name, $worker_name);
         watchdog('signatures_queue', 'This user already signed this petition. No new signature record will be created or counted. uid: @uid, petition_id: @petition_id, secret_validation_key: @secret_validation_key, vid: @vid,  timestamp_received_signature_validation: @timestamp_received_signature_validation. @suffix', array(
           '@uid' => $user->uid,
-          '@petition_id' => $item->petition_id,
-          '@secret_validation_key' => $item->secret_validation_key,
+          '@petition_id' => $item_d->petition_id,
+          '@secret_validation_key' => $item_d->secret_validation_key,
           '@vid' => $item->vid,
           '@timestamp_received_signature_validation' => $item->timestamp_received_signature_validation,
           '@suffix' => $watchdog_suffix,
@@ -301,7 +304,11 @@ function _signatures_queue_process_signatures_valid_petition($petition_id, $debu
  *   Returns a Drupal user object.
  */
 function _signatures_queue_process_signatures_create_user($item) {
-  if ($uid = petition_user_exists_by_mail($item->email)) {
+  
+  $item_d = $item->data;
+  $item_d = (object) $item_d;	
+	
+  if ($uid = petition_user_exists_by_mail($item_d->email)) {
     $user = user_load($uid);
     return $user;
   }
@@ -309,8 +316,8 @@ function _signatures_queue_process_signatures_create_user($item) {
   // Create users in the same format as wh_core_user_register_validate().
   $user = (object) array(
     'is_new' => TRUE,
-    'mail' => trim($item->email),
-    'name' => _signatures_queue_process_signatures_get_unique_username($item->email),
+    'mail' => trim($item_d->email),
+    'name' => _signatures_queue_process_signatures_get_unique_username($item_d->email),
     'status' => 1,
   );
   $new_user = user_save($user);
@@ -325,14 +332,14 @@ function _signatures_queue_process_signatures_create_user($item) {
       }
       // Save profile data.
       $profile = profile2_create(array('type' => $type_name, 'user' => $new_user));
-      $profile->field_first_name[LANGUAGE_NONE][0]['value'] = $item->first_name;
-      $profile->field_last_name[LANGUAGE_NONE][0]['value'] = $item->last_name;
-      $profile->field_zip[LANGUAGE_NONE][0]['value'] = $item->zip;
+      $profile->field_first_name[LANGUAGE_NONE][0]['value'] = $item_d->first_name;
+      $profile->field_last_name[LANGUAGE_NONE][0]['value'] = $item_d->last_name;
+      $profile->field_zip[LANGUAGE_NONE][0]['value'] = $item_d->zip;
       // Invoke petitions_signatures_display_location() for format location.
       if (module_exists('petitions_signatures_display')) {
         $location = FALSE;
-        if (!empty($item->zip) && strlen($item->zip) == 5 && is_numeric($item->zip)) {
-          $location = petitions_signatures_display_location($item->zip);
+        if (!empty($item_d->zip) && strlen($item_d->zip) == 5 && is_numeric($item_d->zip)) {
+          $location = petitions_signatures_display_location($item_d->zip);
         }
 
         if (is_array($location)) {
@@ -343,9 +350,9 @@ function _signatures_queue_process_signatures_create_user($item) {
           $profile->field_country[LANGUAGE_NONE][0]['value'] = $loc['country'];
         }
         else {
-          $profile->field_city[LANGUAGE_NONE][0]['value'] = $item->city;
-          $profile->field_state[LANGUAGE_NONE][0]['value'] = $item->state;
-          $profile->field_country[LANGUAGE_NONE][0]['value'] = $item->country;
+          $profile->field_city[LANGUAGE_NONE][0]['value'] = $item_d->city;
+          $profile->field_state[LANGUAGE_NONE][0]['value'] = $item_d->state;
+          $profile->field_country[LANGUAGE_NONE][0]['value'] = $item_d->country;
         }
       }
       profile2_save($profile);
@@ -371,15 +378,19 @@ function _signatures_queue_process_signatures_create_user($item) {
  *   Returns TRUE on success.
  */
 function _signatures_queue_process_signatures_add_to_signatures_validations($item, $watchdog_suffix) {
+
+  $item_d = $item->data;
+  $item_d = (object) $item_d;
+
   // Save to database.
   try {
     db_insert('signature_validations')
       ->fields(array(
-        'secret_validation_key' => $item->secret_validation_key,
+        'secret_validation_key' => $item_d->secret_validation_key,
         'signature_id' => $item->signature_id,
-        'petition_id' => $item->petition_id,
-        'signature_source_api_key' => $item->signature_source_api_key,
-        'email' => $item->email,
+        'petition_id' => $item_d->petition_id,
+        'signature_source_api_key' => $item_d->signature_source_api_key,
+        'email' => $item_d->email,
         'timestamp_processed_signature' => time(),
       ))
       ->execute();
@@ -479,7 +490,11 @@ function _signatures_queue_process_signatures_get_signature_id($petition_id, $ui
  *   The ID of the signature created, or FALSE if none could be created.
  */
 function _signatures_queue_process_signatures_save_signature($item, $user, $debug, $watchdog_suffix) {
-  $petition = PetitionsController::loadObject($item->petition_id);
+
+  $item_d = $item->data;
+  $item_d = (object) $item_d;	
+	
+  $petition = PetitionsController::loadObject($item_d->petition_id);
 
   // No such petition could be found.
   if (!$petition) {
@@ -493,18 +508,21 @@ function _signatures_queue_process_signatures_save_signature($item, $user, $debu
   $signature
     ->setLegacyPetitionId($petition->getLegacyId())
     ->setPetitionId($petition->getEntityId())
-    ->setFirstName($item->first_name)
-    ->setLastName($item->last_name)
-    ->setCreated($item->timestamp_received_new_signature)
+    ->setFirstName($item_d->first_name)
+    ->setLastName($item_d->last_name)
+    ->setCreated($item_d->timestamp_received_new_signature)
     ->setUid($user->uid)
     ->setUser($user)
-    ->setZip($item->zip)
-    ->setIpAddress($item->client_ip);
+    ->setZip($item_d->zip);
   $signature = SignaturesController::save($signature);
+  
+  $node = node_load($item_d->petition_id);
+  $node->field_petition_signature_count[LANGUAGE_NONE][0]['value'] = $node->field_petition_signature_count[LANGUAGE_NONE][0]['value'] + 1;
+  field_attach_update('node', $node);  
 
   // Store metrics for fraud reporting.
-  petition_update_email_ip_metrics($item->petition_id, $item->email, $item->client_ip);
-  petition_set_metadata_value($item->petition_id, 'petition_signatures_updated', 1);
+  //petition_update_email_ip_metrics($item->petition_id, $item->email, $item->client_ip);
+  //petition_set_metadata_value($item->petition_id, 'petition_signatures_updated', 1);
 
   // Add signature ID and API key to signatures_validations table.
   _signatures_queue_process_signatures_add_to_signatures_validations($item, $watchdog_suffix);
@@ -512,13 +530,13 @@ function _signatures_queue_process_signatures_save_signature($item, $user, $debu
   // Subscribe to list if requested.
   if ((bool) $item->signup) {
     $signatory = array(
-      'first_name' => $item->first_name,
-      'last_name' => $item->last_name,
-      'email' => $item->email,
-      'zip' => $item->zip,
-      'petition_id' => $item->petition_id,
+      'first_name' => $item_d->first_name,
+      'last_name' => $item_d->last_name,
+      'email' => $item_d->email,
+      'zip' => $item_d->zip,
+      'petition_id' => $item_d->petition_id,
     );
-    petition_increment_metadata($item->petition_id, PetitionItem::PETITION_SIGNATURE_COUNT_EMAIL_SIGNUPS);
+    petition_increment_metadata($item_d->petition_id, PetitionItem::PETITION_SIGNATURE_COUNT_EMAIL_SIGNUPS);
     module_invoke_all('petition_signatory_opt_in', $signatory);
   }
 
