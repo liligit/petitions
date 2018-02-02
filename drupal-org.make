@@ -105,6 +105,10 @@ projects[wysiwyg][version] = "2.4"
 
 projects[usfedgov_google_analytics][version] = "1.1"
 
+projects[i18n][version] = "1.22"
+
+projects[variable][version] = "2.5"
+
 ; Third Party Libraries
 ; ==============================================================================
 
