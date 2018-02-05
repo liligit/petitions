@@ -37,10 +37,15 @@ function _signatures_queue_validation_page_callback() {
   // Invoke the workflow.
   $response = signatures_queue_invoke_workflow('receive_signature_validation', $options);
 
+  $petition = node_load($petition_id);
+  $lang = $petition -> language;  
+  global $base_url;
+
   // Redirect the user according to the status response.
   switch ($response) {
     case SIGNATURES_QUEUE_STATUS_OK:
-      drupal_goto("thank-you/{$petition_id}", array(), 301);
+      //drupal_goto("thank-you/{$petition_id}", array(), 301);
+      header('location:'. $base_url .'/'. $lang . '/thank-you/' . $petition_id );
       break;
 
     case SIGNATURES_QUEUE_ERROR_FAILED_VALIDATION:
