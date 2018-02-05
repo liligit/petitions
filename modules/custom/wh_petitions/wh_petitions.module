@@ -437,10 +437,11 @@ function wh_petitions_preprocess_node(&$vars) {
     $logged_in = ($user->uid > 0) ? TRUE : FALSE;
 
     $node = $vars['node'];
-    $lang = $node->language;
+    $body_lang = ($node->language !== 'und') ? $node->language : LANGUAGE_NONE; 
+    $lang = LANGUAGE_NONE;
     $nid = $node->nid;
     $petition_title = $node->title;
-    $body = $node->body[$lang][0]['value'];
+    $body = $node->body[$body_lang][0]['value'];
     $short_url = empty($node->field_short_url[$lang][0]['value']) ? '' : $node->field_short_url[$lang][0]['value'];
     // Set as published date, or FALSE if empty.
     if (empty($node->field_timestamp_published[$lang][0]['value'])) {
@@ -1603,7 +1604,7 @@ function wh_petitions_petition_access($op, $node, $account = NULL) {
     $account = $GLOBALS['user'];
   }
 
-  $petition_status = is_object($node) ? $node->field_petition_status[$node->language][0]['value'] : NULL;
+  $petition_status = is_object($node) ? $node->field_petition_status[LANGUAGE_NONE][0]['value'] : NULL;
 
   switch ($op) {
     case 'view':
