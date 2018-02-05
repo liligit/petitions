@@ -1066,12 +1066,16 @@ class PetitionItem {
 
     $node_status = !in_array($this->getStatus(), wh_petitions_unpublished_statuses());
 
+    global $language;
+    $lang_name = $language->language;
+
     $values = array(
       'type' => 'petition',
       'nid' => $this->getEntityId(),
       'uid' => $this->getUid(),
+      'language' => $lang_name,
       'title' => $this->getTitle(),
-      'body' => array(LANGUAGE_NONE => array(0 => array('value' => $this->getBody()))),
+      'body' => array($lang_name => array(0 => array('value' => $this->getBody()))),
       'created' => $this->getCreated(),
       'status' => $node_status,
       'field_abuse_count' => array(LANGUAGE_NONE => array(0 => array('value' => count($abuse_flags)))),
