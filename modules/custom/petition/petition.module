@@ -513,13 +513,13 @@ function petition_check_reached_public_ready($nid) {
   $lang = $node->language;
 
   $signature_count = $node->signature_count;
-  $petition_status = $node->field_petition_status[$lang][0]['value'];
+  $petition_status = $node->field_petition_status[LANGUAGE_NONE][0]['value'];
 
   // # of signatures necessary to become a public petition.
-  $public_signatures = $node->field_petition_public_signatures[$lang][0]['value'];
+  $public_signatures = $node->field_petition_public_signatures[LANGUAGE_NONE][0]['value'];
 
   // # of signatures necessary to become ready for a response.
-  $response_signature_count = $node->field_petition_response_sign[$lang][0]['value'];
+  $response_signature_count = $node->field_petition_response_sign[LANGUAGE_NONE][0]['value'];
 
   $wrapper = entity_metadata_wrapper('node', $node);
 
@@ -581,7 +581,7 @@ function petition_check_admin_thresholds($nid) {
 
   $signature_count = $node->signature_count;
   // Not using entity_metadata_wrapper to avoid overhead if not public.
-  $petition_status = $node->field_petition_status[$lang][0]['value'];
+  $petition_status = $node->field_petition_status[LANGUAGE_NONE][0]['value'];
 
   $active_petition_thresholds = array(
     variable_get('wh_petitions_admin_signature_threshold_1', 25000) => array(
