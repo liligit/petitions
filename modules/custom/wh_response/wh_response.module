@@ -76,8 +76,8 @@ function wh_response_preview_notification($form, &$form_state) {
   if ($form_state['values']['op'] == 'Preview') {
     // Retrieve body and subject from node ( rather than form_state ).
     $node = node_load($form_state['values']['nid']);
-    $email_body = $node->field_response_email[$node->language][0]['value'];
-    $email_subject = $node->field_response_email_subject[$node->language][0]['value'];
+    $email_body = $node->field_response_email[LANGUAGE_NONE][0]['value'];
+    $email_subject = $node->field_response_email_subject[LANGUAGE_NONE][0]['value'];
 
     // Send preview emails.
     $count = 0;
@@ -111,8 +111,8 @@ function wh_response_send_response_notification($form, &$form_state) {
   $submit_button_text = $form_state['values']['op'];
   $response_id = $form_state['values']['nid'];
   $node = node_load($response_id);
-  $email_body = $node->field_response_email[$node->language][0]['value'];
-  $email_subject = $node->field_response_email_subject[$node->language][0]['value'];
+  $email_body = $node->field_response_email[LANGUAGE_NONE][0]['value'];
+  $email_subject = $node->field_response_email_subject[LANGUAGE_NONE][0]['value'];
   $params = array('body' => $email_body, 'subject' => $email_subject);
   $contains_petition_id = strpos($submit_button_text, "(");
   if ($contains_petition_id) {
@@ -324,18 +324,18 @@ function wh_response_form_wh_response_node_form_alter(&$form, &$form_state) {
     // Moving the petition reference field into a fieldset.
     $form['petitions']['field_petition_id'] = $form['field_petition_id'];
     unset($form['field_petition_id']);
-    foreach ($form['petitions']['field_petition_id'][$form['language']['#value']] as $item_id => $item) {
+    foreach ($form['petitions']['field_petition_id']['und'] as $item_id => $item) {
       if (!is_numeric($item_id)) {
         continue;
       }
 
-      $is_petition_referenced = !empty($item['target_id']['#entity']->field_petition_id[$form['language']['#value']][$item_id]['target_id']);
+      $is_petition_referenced = !empty($item['target_id']['#entity']->field_petition_id['und'][$item_id]['target_id']);
       if ($is_petition_referenced) {
-        $petition_nid = $item['target_id']['#entity']->field_petition_id[$form['language']['#value']][$item_id]['target_id'];
+        $petition_nid = $item['target_id']['#entity']->field_petition_id['und'][$item_id]['target_id'];
         $view = l(t('View'), 'node/' . $petition_nid, array('attributes' => array('target' => '_blank')));
-        $form['petitions']['field_petition_id'][$form['language']['#value']][$item_id]['#prefix'] = '<div class="float-right">' . $view . '</div>';
+        $form['petitions']['field_petition_id']['und'][$item_id]['#prefix'] = '<div class="float-right">' . $view . '</div>';
 
-        $form['petitions']['field_petition_id'][$form['language']['#value']][$item_id]['send'] = array(
+        $form['petitions']['field_petition_id']['und'][$item_id]['send'] = array(
           '#type' => 'submit',
           '#value' => t('Send Notification (@nid)', array('@nid' => $petition_nid)),
           '#weight' => 300,
@@ -344,7 +344,7 @@ function wh_response_form_wh_response_node_form_alter(&$form, &$form_state) {
         );
       }
     }
-    $form['petitions']['field_petition_id'][$form['language']['#value']]['add_more']['#value'] = 'Add another petition';
+    $form['petitions']['field_petition_id']['und']['add_more']['#value'] = 'Add another petition';
   }
   else {
     // mongo2mysql : Remove this block after mongo is turned off.
@@ -602,28 +602,28 @@ function wh_response_node_update($node) {
 
     $petition_references = array();
     // Add response reference to petition(s), if appropriate.
-    if (isset($node->field_petition_id[$language]) && is_array($node->field_petition_id[$language])) {
-      foreach ($node->field_petition_id[$language] as $petition_ref) {
+    if (isset($node->field_petition_id[LANGUAGE_NONE]) && is_array($node->field_petition_id[LANGUAGE_NONE])) {
+      foreach ($node->field_petition_id[LANGUAGE_NONE] as $petition_ref) {
         $petition_id = $petition_ref['target_id'];
         $petition_references[$petition_id] = $petition_id;
         $petition = node_load($petition_id);
         if ($is_response_ready && wh_response_petition_can_accept_response($petition)) {
-          $petition->field_response_id[$language][0]['target_id'] = $node->nid;
-          $petition->field_petition_status[$language][0]['value'] = WH_PETITION_STATUS_REVIEWED;
-          $petition->field_response_status[$language][0]['value'] = WH_PETITION_RESPONSE_STATUS_ANSWERED;
+          $petition->field_response_id[LANGUAGE_NONE][0]['target_id'] = $node->nid;
+          $petition->field_petition_status[LANGUAGE_NONE][0]['value'] = WH_PETITION_STATUS_REVIEWED;
+          $petition->field_response_status[LANGUAGE_NONE][0]['value'] = WH_PETITION_RESPONSE_STATUS_ANSWERED;
           node_save($petition);
           entity_get_controller('node')->resetCache(array($petition->nid));
         }
       }
     }
     // Did the previous version of the response node reference a petition?
-    $did_reference_petitions = !empty($original_node->field_petition_id[$language][0]['target_id']);
+    $did_reference_petitions = !empty($original_node->field_petition_id[LANGUAGE_NONE][0]['target_id']);
     // Check which petition references have been removed.
     if ($did_reference_petitions) {
       // Compare previous version of response to see which
       // petition references have been removed.
       $removed_petition_references = array();
-      foreach ($original_node->field_petition_id[$language] as $original_referenced_petition) {
+      foreach ($original_node->field_petition_id[LANGUAGE_NONE] as $original_referenced_petition) {
         $original_referenced_petition_id = $original_referenced_petition['target_id'];
         $still_referenced = (!empty($petition_references[$original_referenced_petition_id]));
         if ($still_referenced == FALSE) {
@@ -644,12 +644,12 @@ function wh_response_node_update($node) {
 function wh_response_node_insert($node) {
   $is_response_ready = ($node->type == 'wh_response') && ($node->status == 1) && isset($node->field_petition_id);
   if ($is_response_ready) {
-    foreach ($node->field_petition_id[$node->language] as $petition_ref) {
+    foreach ($node->field_petition_id[LANGUAGE_NONE] as $petition_ref) {
       $petition = node_load($petition_ref['target_id']);
       if (wh_response_petition_can_accept_response($petition)) {
-        $petition->field_response_id[$node->language][0]['target_id'] = $node->nid;
-        $petition->field_petition_status[$node->language][0]['value'] = WH_PETITION_STATUS_REVIEWED;
-        $petition->field_response_status[$node->language][0]['value'] = WH_PETITION_RESPONSE_STATUS_ANSWERED;
+        $petition->field_response_id[LANGUAGE_NONE][0]['target_id'] = $node->nid;
+        $petition->field_petition_status[LANGUAGE_NONE][0]['value'] = WH_PETITION_STATUS_REVIEWED;
+        $petition->field_response_status[LANGUAGE_NONE][0]['value'] = WH_PETITION_RESPONSE_STATUS_ANSWERED;
         node_save($petition);
         entity_get_controller('node')->resetCache(array($petition->nid));
       }
@@ -671,8 +671,8 @@ function wh_response_petition_can_accept_response($petition) {
     $petition = node_load($petition);
   }
 
-  $not_responded_to = empty($petition->field_response_id[$petition->language][0]['target_id']);
-  $petition_status = $petition->field_petition_status[$petition->language][0]['value'];
+  $not_responded_to = empty($petition->field_response_id[LANGUAGE_NONE][0]['target_id']);
+  $petition_status = $petition->field_petition_status[LANGUAGE_NONE][0]['value'];
 
   // A petition can be responded to if it satisfies these conditions:
   // - Public or under review.
@@ -786,8 +786,8 @@ function wh_response_preprocess_node(&$vars) {
       }
     }
     else {
-      if (isset($node->field_petition_id[$node->language])) {
-        foreach ($node->field_petition_id[$node->language] as $petition_ref) {
+      if (isset($node->field_petition_id[LANGUAGE_NONE])) {
+        foreach ($node->field_petition_id[LANGUAGE_NONE] as $petition_ref) {
           array_push($ids, $petition_ref['target_id']);
           array_push($response_objs, array(
             'petition' => $petition_ref['target_id'],
