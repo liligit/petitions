@@ -13,9 +13,10 @@
     <div class="header-container">
       <div id="header-region" class="header-region container">
         <?php print render($page['header']); ?>
+        <?php global $language; $lang = $language->language; $url = $base_url . '/' . $lang; ?>
         <div class="logo">
-          <div class="logo--desktop"><a href="<?php print $base_url ?>"><img alt="We The People logo" src="<?php print $theme_path ?>/images/wtp_logo_desktop.png"></a></div>
-          <div class="logo--mobile"><a href="<?php print $base_url ?>"><img alt="We The People logo" src="<?php print $theme_path ?>/images/wtp_logo_mobile.png"></a></div>
+          <div class="logo--desktop"><a href="<?php print $url ?>"><img alt="We The People logo" src="<?php print $theme_path ?>/images/wtp_logo_desktop.png"></a></div>
+          <div class="logo--mobile"><a href="<?php print $url ?>"><img alt="We The People logo" src="<?php print $theme_path ?>/images/wtp_logo_mobile.png"></a></div>
         </div>
 
         <?php if ($main_menu || $secondary_menu): ?>
@@ -29,8 +30,8 @@
     </div>
     <div class="tagline">
      <div class="container">
-       <div class="tagline--desktop"><a href="<?php print $base_url ?>"><img alt="Your Voice in the White House tagline" src="<?php print $theme_path ?>/images/wtp_tagline_desktop.png"></a></div>
-       <div class="tagline--mobile"><a href="<?php print $base_url ?>"><img alt="Your Voice in the White House tagline" src="<?php print $theme_path ?>/images/wtp_tagline_mobile.png"></a></div>
+       <div class="tagline--desktop"><a href="<?php print $url ?>"><img alt="Your Voice in the White House tagline" src="<?php print $theme_path ?>/images/wtp_tagline_desktop.png"></a></div>
+       <div class="tagline--mobile"><a href="<?php print $url ?>"><img alt="Your Voice in the White House tagline" src="<?php print $theme_path ?>/images/wtp_tagline_mobile.png"></a></div>
        <div class="menu--user">
          <?php print render($user_menu); ?>
        </div>
